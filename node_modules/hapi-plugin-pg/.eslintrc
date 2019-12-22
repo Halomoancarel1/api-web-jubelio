@@ -1,0 +1,13 @@
+{
+    "root": true,
+    "extends": "eslint-config-hapi",
+    "plugins": [
+        // "markdown"
+    ],
+    "rules": {
+      "indent": [2, 2],
+      "no-multiple-empty-lines": [2, {"max": 2}],
+      "hapi/hapi-scope-start": [0],
+      "no-else-return": [0]
+    }
+}
