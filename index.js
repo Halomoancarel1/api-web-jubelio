@@ -7,7 +7,7 @@ var parser = require('fast-xml-parser');
 const Pool = require('pg').Pool
 const pool = new Pool({
   user: 'postgres',
-  host: '192.168.0.28',
+  host: '192.168.0.32',
   database: 'jubelio',
   password: 'admin',
   port: 5432,
@@ -20,24 +20,14 @@ const init = async () => {
     host: 'localhost',
     routes: {
         cors: {
-            origin: ['*'], // an array of origins or 'ignore'
-            headers: ["Accept", "Authorization", "Content-Type", "If-None-Match", "Accept-language"],
-            exposedHeaders: ['Accept'], // an array of exposed headers - 'Access-Control-Expose-Headers',
-            additionalExposedHeaders: ['Accept'], // an array of additional exposed headers
-            maxAge: 60,
-            credentials: true // boolean - 'Access-Control-Allow-Credentials'
+          origin: ['*'],
+          additionalHeaders: ['cache-control', 'x-requested-with']
             }
         }
     });
 
 
     server.route({
-      // config: {
-      //     cors: {
-      //         origin: ['*'],
-      //         additionalHeaders: ['cache-control', 'x-requested-with']
-      //     }
-      // },
       method: 'GET',
       path: '/products',
       handler:async function(request, reply) {
@@ -51,7 +41,7 @@ const init = async () => {
       path: '/productdetail/{sku}',
       handler:async function(request, reply) {
       const id = request.params.sku
-      const resultDetail = await pool.query('SELECT * FROM product_detail WHERE product_code = $1', [id])
+      const resultDetail = await pool.query('SELECT * FROM product_detail WHERE product_code = $1', [id]);
       return resultDetail.rows[0];
       }
     });
@@ -63,10 +53,10 @@ const init = async () => {
       handler: async function(request, reply) {
         let returnValue = new Object();
         let id = uuidv4();
-        const { product_name, product_code, product_url, product_description, product_price } = request.payload
+        const { product_name, product_code, product_url, product_desc, product_price } = request.payload
         console.log(id);
         let date = new Date();
-        const insert = await pool.query('INSERT INTO product_detail (id, product_name, product_code, product_url, product_desc, product_price, created_date) VALUES ($1, $2, $3, $4, $5, $6, $7)', [id, product_name, product_code, product_url, product_description, product_price, date], (error, results) => {
+        const insert = await pool.query('INSERT INTO product_detail (id, product_name, product_code, product_url, product_desc, product_price, created_date) VALUES ($1, $2, $3, $4, $5, $6, $7)', [id, product_name, product_code, product_url, product_desc, product_price, date], (error, results) => {
           if (error) {
             throw error
           }
@@ -84,9 +74,9 @@ const init = async () => {
       method: 'PUT',
       path: '/updateproduct',
       handler:async function(request, reply) {
-          const {id, product_name, product_description, product_price  } = request.payload
+          const {id, product_name, product_desc, product_price  } = request.payload
           let date = new Date();
-          const update = await pool.query('UPDATE product_detail SET product_name = $2, product_desc = $3, product_price = $4, updated_date = $5  WHERE id = $1',  [id, product_name, product_description, product_price, date ], (error, results) => {
+          const update = await pool.query('UPDATE product_detail SET product_name = $2, product_desc = $3, product_price = $4, updated_date = $5  WHERE id = $1',  [id, product_name, product_desc, product_price, date ], (error, results) => {
             if (error) {
               throw error
             }
@@ -96,6 +86,19 @@ const init = async () => {
     });
 
     //delete data from postgresql
+    server.route({
+      method: 'DELETE',
+      path: '/deleteproduct',
+      handler:async function(request, reply) {
+          const {id  } = request.payload
+          const update = await pool.query('DELETE from  product_detail where id = $1',  [id ], (error, results) => {
+            if (error) {
+              throw error
+            }
+          });
+          return ('Berhasil Update Data');
+        }
+    });
 
     server.route({
         method: 'GET',
